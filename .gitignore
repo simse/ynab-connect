@@ -177,3 +177,5 @@ dist
 # development files
 config.yaml
 cronbake-state.json
+
+ynab_connect

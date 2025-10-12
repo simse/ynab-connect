@@ -4,7 +4,8 @@
 	"type": "module",
 	"scripts": {
 		"lint": "biome check",
-		"lint:fix": "biome check --write"
+		"lint:fix": "biome check --write",
+		"build:binary": "bun build src/index.ts --compile --minify --sourcemaps --outfile ynab-connect"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.5",

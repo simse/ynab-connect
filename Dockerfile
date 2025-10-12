@@ -3,7 +3,7 @@ WORKDIR /usr/src/app
 
 COPY . .
 RUN bun install --production
-RUN bun build src/index.ts --compile --minify --sourcemaps --outfile ynab-connect
+RUN bun build:binary
 
 FROM debian:stable-slim AS runtime
 WORKDIR /usr/src/app
