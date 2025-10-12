@@ -1,6 +1,6 @@
-<div style="text-align:center;">
-    <h1>ynab-connect</h1>
-    <p>Tool to sync unsupported sources to YNAB tracking accounts.</p>
+<div>
+    <h1 align="center">ynab-connect</h1>
+    <p align="center">Tool to sync unsupported sources to YNAB tracking accounts.</p>
 </div>
 
 ---
@@ -52,18 +52,18 @@ browser:
 🌐 = [BROWSER](#browser) REQUIRED
 
 <details>
-<summary>Trading 212 <strong>Stocks ISA</strong> 🇬🇧</summary>
+<summary><h3>Trading 212 <strong>Stocks ISA</strong> 🇬🇧</h3></summary>
 
 Sync the value of your Trading 212 Stocks ISA using the beta API.
 
 See the [following guide](https://helpcentre.trading212.com/hc/en-us/articles/14584770928157-Trading-212-API-key) for how to get your API key and secret.
 
-### Notes on the API key
+#### Notes on the API key
 You may restrict the API key to your own IP address for increased security.
 
 The only required permission on the key is "Portfolio".
 
-### Required configuration
+#### Required configuration
 
 ```yaml
 - name: "Stocks ISA" # Friendly name for the account
@@ -76,13 +76,13 @@ The only required permission on the key is "Portfolio".
 </details>
 
 <details>
-<summary>UK Student Loan 🇬🇧🌐</summary>
+<summary><h3>UK Student Loan 🇬🇧🌐</h3></summary>
 
 Sync your UK Student Loan balance from the Student Loans Company website.
 
 This sources requires a [browser](#browser) to be configured.
 
-### Required configuration
+#### Required configuration
 
 ```yaml
 - name: "Student Loan"

@@ -1,0 +1,89 @@
+name: Release ynab-connect
+on:
+  pull_request:
+    types:
+      - synchronize
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    name: Build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3'
+
+      - name: Install dependencies
+        run: bun ci
+
+      - name: Build
+        run: bun build:binary
+
+  lint:
+    runs-on: ubuntu-22.04
+    name: Lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3'
+
+      - name: Install dependencies
+        run: bun ci
+
+      - name: Lint
+        run: bun run lint
+
+  release:
+    needs:
+      - build
+      - lint
+    runs-on: ubuntu-22.04
+    name: Release
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "PR detected, using pre-release tag"
+            TAG="pr-${{ github.event.pull_request.number }}-$(date +'%Y%m%d%H%M%S')"
+          else
+            echo "No PR detected, using latest"
+            TAG="latest"
+          fi
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/simse/ynab-connect:${{ env.TAG }}
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
