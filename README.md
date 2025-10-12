@@ -1,7 +1,7 @@
-<div style="text-align:center;">
+<center>
     <h1>ynab-connect</h1>
     <p>Tool to sync unsupported sources to YNAB tracking accounts.</p>
-</div>
+</center>
 
 ---
 
@@ -52,7 +52,7 @@ browser:
 🌐 = [BROWSER](#browser) REQUIRED
 
 <details>
-<summary>Trading 212 <strong>Stocks ISA</strong> 🇬🇧</summary>
+<summary><h3>Trading 212 <strong>Stocks ISA</strong> 🇬🇧</h3></summary>
 
 Sync the value of your Trading 212 Stocks ISA using the beta API.
 
@@ -76,7 +76,7 @@ The only required permission on the key is "Portfolio".
 </details>
 
 <details>
-<summary>UK Student Loan 🇬🇧🌐</summary>
+<summary><h3>UK Student Loan 🇬🇧🌐</h3></summary>
 
 Sync your UK Student Loan balance from the Student Loans Company website.
 
