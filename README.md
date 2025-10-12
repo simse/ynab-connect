@@ -1,6 +1,6 @@
-<div align="center">
-    <h1>ynab-connect</h1>
-    <p>Tool to sync unsupported sources to YNAB tracking accounts.</p>
+<div>
+    <h1 align="center">ynab-connect</h1>
+    <p align="center">Tool to sync unsupported sources to YNAB tracking accounts.</p>
 </div>
 
 ---
