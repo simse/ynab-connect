@@ -1,8 +1,15 @@
 import puppeteer from "puppeteer-core";
 import config from "./config.ts";
 
-export const checkConnection = async () => {
-	await getBrowser();
+export const isBrowserAvailable = async () => {
+	try {
+		const browser = await getBrowser();
+		await browser.close();
+
+		return true;
+	} catch {
+		return false;
+	}
 };
 
 export const getBrowser = async () => {

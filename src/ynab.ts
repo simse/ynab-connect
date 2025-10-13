@@ -1,11 +1,10 @@
 import * as ynab from "ynab";
 import config from "./config.ts";
+import logger from "./logger.ts";
 
 const ynabAPI = new ynab.API(config.ynab.accessToken);
 
-const ensureBudgetExists = async () => {
-	const budgetId = config.ynab.budgetId;
-
+const ensureBudgetExists = async (budgetId: string) => {
 	try {
 		await ynabAPI.budgets.getBudgetById(budgetId);
 	} catch (_e) {
@@ -30,6 +29,7 @@ const adjustBalance = async (
 	accountId: string,
 	amount: number,
 	date?: Date,
+	log = logger,
 ) => {
 	const budgetId = config.ynab.budgetId;
 	const balanceDate = date ?? new Date();
@@ -42,12 +42,12 @@ const adjustBalance = async (
 		const currentBalance = await getAccountBalance(accountId);
 
 		balanceDelta = newBalance - currentBalance;
-	} catch (e) {
+	} catch (_e) {
 		throw new Error(`Error fetching account balance for account ${accountId}`);
 	}
 
 	if (balanceDelta === 0) {
-		console.log(
+		log.info(
 			`No adjustment needed for account ${accountId}. Current balance matches desired balance of ${newBalance}.`,
 		);
 		return;

@@ -1,70 +1,77 @@
-import Baker from "cronbake";
+import cron, { type ScheduledTask } from "node-cron";
 import config from "./config.ts";
-import { connectors } from "./connectors";
-import { adjustBalance } from "./ynab.ts";
+import logger, { createLogger } from "./logger.ts";
+import { runSyncJob } from "./runtime.ts";
+import { ensureBudgetExists } from "./ynab.ts";
 
-// scheduler
-const baker = new Baker({
-	enableMetrics: true,
-	/*persistence: {
-		enabled: true,
-		autoRestore: false,
-		strategy: "file",
-		provider: new FilePersistenceProvider("./cronbake-state.json"),
-	},*/
-	schedulerConfig: {
-		maxHistoryEntries: 10000,
-		useCalculatedTimeouts: true,
-	},
-});
+logger.info("Welcome to ynab-connect");
+
+// check YNAB budget exists
+const budgetExists = await ensureBudgetExists(config.ynab.budgetId);
+
+if (!budgetExists) {
+	logger.error(
+		`Budget with ID ${config.ynab.budgetId} does not exist or is inaccessible with the provided access token.`,
+	);
+	process.exit(1);
+}
+
+logger.info(`Using YNAB budget ID: ${config.ynab.budgetId}`);
+
+// schedule jobs for each account
+const jobs: Map<string, ScheduledTask> = new Map();
+
+for (const account of config.accounts) {
+	const task = cron.schedule(
+		account.interval,
+		async () => {
+			await runSyncJob(account);
+		},
+		{
+			noOverlap: true,
+		},
+	);
+	jobs.set(account.name, task);
+
+	logger.info(
+		{
+			account: account.name,
+			schedule: account.interval,
+			next_run: task.getNextRun()?.toISOString(),
+		},
+		`Scheduled job successfully`,
+	);
+
+	await task.execute();
+}
 
 // schedule summary job
-baker.add({
-	name: "summary-job",
-	cron: "@hourly",
-	callback: async () => {
-		console.log("Summary job running... (TO BE IMPLEMENTED)");
-	},
-	persist: false,
-	start: true,
+const summaryJob = cron.schedule("0 * * * *", () => {
+	const log = createLogger("Summary");
+
+	for (const [name, job] of jobs) {
+		log.info(
+			{
+				account: name,
+				next_run: job.getNextRun()?.toISOString(),
+			},
+			`Next run scheduled`,
+		);
+	}
 });
 
-// dynamically add jobs based on config
-for (const account of config.accounts) {
-	baker.add({
-		name: `sync-${account.name}`,
-		cron: account.interval,
-		callback: async () => {
-			console.log(
-				`[${account.name}] Starting sync job with provider: ${account.type}`,
-			);
+await summaryJob.execute();
 
-			// get balance
-			let balance = 0;
+// handle graceful shutdown
+const shutdown = () => {
+	logger.info("Shutting down...");
 
-			try {
-				balance = await connectors[account.type](account);
-			} catch (e) {
-				console.error(`[${account.name}] Error fetching balance:`, e);
-				return;
-			}
-			console.log(`[${account.name}] Fetched balance: ${balance}`);
+	for (const [name, job] of jobs) {
+		logger.info(`Stopping job for account "${name}"`);
+		job.stop();
+	}
 
-			// adjust YNAB account balance
-			try {
-				await adjustBalance(account.ynabAccountId, balance);
-				console.log(
-					`[${account.name}] Adjusted YNAB account ${account.ynabAccountId} to balance: ${balance}`,
-				);
-			} catch (e) {
-				console.error(
-					`[${account.name}] Error adjusting YNAB account ${account.ynabAccountId}:`,
-					e,
-				);
-			}
-		},
-		persist: true,
-		start: true,
-		immediate: true,
-	});
-}
+	process.exit(0);
+};
+
+process.on("SIGINT", shutdown);

@@ -1,4 +1,5 @@
-import { getBrowser } from "../browser.ts";
+import { getBrowser, isBrowserAvailable } from "../browser.ts";
+import type { AccountResult } from "./index.ts";
 
 const parseBalanceString = (input: string): number => {
 	const m = input.match(/£\s*([\d,]+(?:\.\d+)?)/);
@@ -10,44 +11,94 @@ const getUkStudentLoanBalance = async (
 	slcEmail: string,
 	slcPassword: string,
 	slcSecretAnswer: string,
-): Promise<number> => {
+): Promise<AccountResult> => {
+	const browserAvailable = await isBrowserAvailable();
+	if (!browserAvailable) {
+		return {
+			error:
+				"Browser is not available. Please check your browser configuration.",
+			canRetry: false,
+		};
+	}
+
 	const browser = await getBrowser();
 
 	const page = await browser.newPage();
 
 	/* Journey start */
-	await page.goto(
-		"https://www.gov.uk/sign-in-to-manage-your-student-loan-balance",
-	);
+	try {
+		await page.goto(
+			"https://www.gov.uk/sign-in-to-manage-your-student-loan-balance",
+		);
+	} catch {
+		return {
+			error: "Could not reach UK Student Loan page",
+			canRetry: true,
+		};
+	}
 
-	await page.locator("text/Start now").click();
+	try {
+		await page.locator("text/Start now").click();
+	} catch {
+		return {
+			error: "Could not find Start Now button on UK Student Loan page",
+			canRetry: true,
+		};
+	}
 
 	/* Select manage student loan */
-	await page.locator("#textForSignIn1").click();
+	try {
+		await page.locator("#textForSignIn1").click();
 
-	await page.locator("text/Continue").click();
+		await page.locator("text/Continue").click();
+	} catch {
+		return {
+			error:
+				"Could not find manage student loan option on UK Student Loan page",
+			canRetry: true,
+		};
+	}
 
 	/* Enter credentials */
-	await page.locator("input#userId").fill(slcEmail);
+	try {
+		await page.locator("input#userId").fill(slcEmail);
 
-	await page.locator("input#password").fill(slcPassword);
+		await page.locator("input#password").fill(slcPassword);
 
-	await page.locator("text/Continue").click();
+		await page.locator("text/Continue").click();
+	} catch {
+		return {
+			error: "Could not enter email or password on UK Student Loan page",
+			canRetry: true,
+		};
+	}
 
 	/* Enter secret answer */
-	await page.locator("input#secretAnswer").fill(slcSecretAnswer);
+	try {
+		await page.locator("input#secretAnswer").fill(slcSecretAnswer);
 
-	await page.locator("text/Login to account").click();
+		await page.locator("text/Login to account").click();
+	} catch {
+		return {
+			error: "Could not enter secret answer on UK Student Loan page",
+			canRetry: true,
+		};
+	}
 
 	/* Get balance */
 	const balanceElement = await page.waitForSelector("#balanceId_1");
 	const value = await balanceElement?.evaluate((el) => el.textContent);
 
 	if (!value) {
-		throw new Error("Could not find balance element on page");
+		return {
+			error: "Could not find balance element on UK Student Loan page",
+			canRetry: false,
+		};
 	}
 
-	return -1 * parseBalanceString(value);
+	return {
+		balance: -1 * parseBalanceString(value),
+	};
 };
 
-export { getUkStudentLoanBalance };
+export { getUkStudentLoanBalance, parseBalanceString };

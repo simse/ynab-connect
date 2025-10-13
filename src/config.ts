@@ -1,16 +1,17 @@
 import path from "node:path";
-import { Cron } from "cronbake";
+import cron from "node-cron";
 import { z } from "zod";
 import { loadConfig } from "zod-config";
 import { yamlAdapter } from "zod-config/yaml-adapter";
 import { fromError } from "zod-validation-error";
+import logger from "./logger.ts";
 
 const commonFields = {
 	name: z.string().min(1, "Account name is required"),
 	ynabAccountId: z.string().min(1, "YNAB Account ID is required"),
 	interval: z
 		.string()
-		.refine((val) => Cron.isValid(val), { error: "Invalid CRON expression" }),
+		.refine((val) => cron.validate(val), { error: "Invalid CRON expression" }),
 };
 
 const accountConfig = z.discriminatedUnion("type", [
@@ -30,6 +31,8 @@ const accountConfig = z.discriminatedUnion("type", [
 			.min(1, "UK Student Loan secret answer is required"),
 	}),
 ]);
+
+export type Account = z.infer<typeof accountConfig>;
 
 const schemaConfig = z.object({
 	ynab: z.object({
@@ -61,6 +64,7 @@ const config = await loadConfig({
 		console.error(`error while loading config: ${fromError(e).message}`);
 		process.exit(1);
 	},
+	logger,
 });
 
 export default config;
