@@ -2,6 +2,9 @@ import * as ynab from "ynab";
 import config from "./config.ts";
 import logger from "./logger.ts";
 
+const YNAB_MEMO = "Automated balance adjustment created by ynab-connect";
+const YNAB_PAYEE = "Balance Adjustment";
+
 const ynabAPI = new ynab.API(config.ynab.accessToken);
 
 const ensureBudgetExists = async (budgetId: string) => {
@@ -23,6 +26,10 @@ const getAccountBalance = async (accountId: string) => {
 	);
 
 	return accountResponse.data.account.cleared_balance;
+};
+
+const dateToYnabFormat = (date: Date) => {
+	return date.toISOString().split("T")[0];
 };
 
 const adjustBalance = async (
@@ -48,8 +55,45 @@ const adjustBalance = async (
 
 	if (balanceDelta === 0) {
 		log.info(
-			`No adjustment needed for account ${accountId}. Current balance matches desired balance of ${newBalance}.`,
+			{ accountId, amount, date: dateToYnabFormat(balanceDate) },
+			`No adjustment needed.`,
 		);
+		return;
+	}
+
+	// check if there's already a transaction with the same memo and date
+	const transactionsResponse =
+		await ynabAPI.transactions.getTransactionsByAccount(
+			budgetId,
+			accountId,
+			dateToYnabFormat(balanceDate),
+		);
+
+	const existingTransaction = transactionsResponse.data.transactions.find(
+		(t) => t.memo === YNAB_MEMO && t.date === dateToYnabFormat(balanceDate),
+	);
+
+	if (existingTransaction) {
+		log.info(
+			{
+				accountId,
+				transactionId: existingTransaction.id,
+				date: existingTransaction.date,
+				amount: existingTransaction.amount,
+			},
+			`An adjustment transaction already exists, updating that transaction instead of creating a new one.`,
+		);
+
+		await ynabAPI.transactions.updateTransaction(
+			budgetId,
+			existingTransaction.id,
+			{
+				transaction: {
+					amount: balanceDelta + existingTransaction.amount,
+				},
+			},
+		);
+
 		return;
 	}
 
@@ -60,8 +104,8 @@ const adjustBalance = async (
 			approved: true,
 			date: balanceDate.toISOString().split("T")[0],
 			amount: balanceDelta,
-			payee_name: "Balance Adjustment",
-			memo: "Automated balance adjustment created by ynab-connect",
+			payee_name: YNAB_PAYEE,
+			memo: YNAB_MEMO,
 		},
 	});
 };
