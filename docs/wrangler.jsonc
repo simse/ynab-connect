@@ -1,0 +1,13 @@
+{
+	"name": "ynab-connect",
+	"compatibility_date": "2025-10-14",
+	"assets": {
+		"directory": ".vitepress/dist"
+	},
+	"routes": [
+		{
+			"custom_domain": true,
+			"pattern": "ynab-connect.simse.io"
+		}
+	]
+}
