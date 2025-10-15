@@ -178,4 +178,9 @@ dist
 config.yaml
 cronbake-state.json
 
+# binary
 ynab_connect
+
+# docs
+docs/.vitepress/dist
+docs/.vitepress/cache
