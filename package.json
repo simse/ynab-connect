@@ -8,8 +8,7 @@
 		"build:binary": "bun build src/index.ts --compile --minify --sourcemaps --outfile ynab-connect",
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
-		"docs:preview": "vitepress preview docs",
-		"docs:publish": "bun run docs:build && wrangler deploy --cwd docs"
+		"docs:preview": "vitepress preview docs"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.5",
