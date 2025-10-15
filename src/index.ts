@@ -1,4 +1,5 @@
 import cron, { type ScheduledTask } from "node-cron";
+import { start2FAServer, stop2FAServer } from "./2fa.ts";
 import config from "./config.ts";
 import logger, { createLogger } from "./logger.ts";
 import { runSyncJob } from "./runtime.ts";
@@ -17,6 +18,9 @@ if (!budgetExists) {
 }
 
 logger.info(`Using YNAB budget ID: ${config.ynab.budgetId}`);
+
+// start 2FA server
+start2FAServer(config.server.port);
 
 // schedule jobs for each account
 const jobs: Map<string, ScheduledTask> = new Map();
@@ -65,6 +69,8 @@ await summaryJob.execute();
 // handle graceful shutdown
 const shutdown = () => {
 	logger.info("Shutting down...");
+
+	stop2FAServer();
 
 	for (const [name, job] of jobs) {
 		logger.info(`Stopping job for account "${name}"`);

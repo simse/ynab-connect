@@ -44,6 +44,11 @@ const schemaConfig = z.object({
 			endpoint: z.string(),
 		})
 		.optional(),
+	server: z
+		.object({
+			port: z.number().int().positive().default(4030),
+		})
+		.default({ port: 4030 }),
 	accounts: accountConfig
 		.array()
 		.min(1, "At least one account must be configured"),

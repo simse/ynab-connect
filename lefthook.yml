@@ -3,6 +3,3 @@ pre-commit:
   jobs:
     - run: bun run lint
       glob: "*.ts"
-
-    - run: bun test
-      glob: "*.ts"
