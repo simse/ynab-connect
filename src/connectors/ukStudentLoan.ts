@@ -12,18 +12,21 @@ const getUkStudentLoanBalance = async (
 	slcEmail: string,
 	slcPassword: string,
 	slcSecretAnswer: string,
-	browserFactory: () => Promise<BrowserAdapter> = getBrowser,
+	browserFactory?: () => Promise<BrowserAdapter>,
 ): Promise<AccountResult> => {
-	const browserAvailable = await isBrowserAvailable();
-	if (!browserAvailable) {
-		return {
-			error:
-				"Browser is not available. Please check your browser configuration.",
-			canRetry: false,
-		};
+	// Only check browser availability when using the default factory
+	if (!browserFactory) {
+		const browserAvailable = await isBrowserAvailable();
+		if (!browserAvailable) {
+			return {
+				error:
+					"Browser is not available. Please check your browser configuration.",
+				canRetry: false,
+			};
+		}
 	}
 
-	const browser = await browserFactory();
+	const browser = await (browserFactory ?? getBrowser)();
 
 	const page = await browser.newPage();
 
