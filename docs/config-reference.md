@@ -3,7 +3,9 @@ title: Configuration Reference
 ---
 
 <script setup>
-import { data as schema } from './config-reference.data'
+import { data } from './config-reference.data'
+
+const schema = data.schema
 
 // Helper to format property type
 const formatType = (prop) => {
@@ -65,6 +67,9 @@ const getCommonAccountFields = () => {
   const commonFields = []
 
   for (const [key, prop] of Object.entries(firstType)) {
+    // Skip 'type' field as it has different const values for each account type
+    if (key === 'type') continue
+
     // Check if this field exists in all account types
     const isCommon = accountTypes.every(at => at.schema.properties[key])
     if (isCommon) {
@@ -77,118 +82,12 @@ const getCommonAccountFields = () => {
 
 const commonAccountFields = getCommonAccountFields()
 
-// Generate example value from schema property
-const generateExampleValue = (key, prop) => {
-  if (prop.const) return `"${prop.const}"`
-  if (prop.default !== undefined) return prop.default
-
-  if (prop.type === 'string') {
-    if (prop.format === 'email') return '"your@email.com"'
-    if (key.toLowerCase().includes('token')) return '"your-token"'
-    if (key.toLowerCase().includes('key')) return `"your-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}"`
-    if (key.toLowerCase().includes('id')) return `"your-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}"`
-    if (key.toLowerCase().includes('password')) return '"your-password"'
-    if (key.toLowerCase().includes('endpoint')) return '"wss://chrome.browserless.io?token=YOUR_TOKEN"'
-    if (key === 'interval') return '"0 2 * * *"'
-    if (key === 'name') return '"My Account"'
-    if (key.toLowerCase().includes('username')) return '"your-username"'
-    if (key.toLowerCase().includes('answer')) return '"your-answer"'
-    if (key.toLowerCase().includes('number')) return '"your-number"'
-    return `"your-${key}"`
-  }
-
-  if (prop.type === 'integer' || prop.type === 'number') {
-    return prop.default !== undefined ? prop.default : 0
-  }
-
-  return '""'
+// Get account-specific fields (excluding common fields)
+const getAccountSpecificFields = (accountType) => {
+  return Object.entries(accountType.schema.properties)
+    .filter(([key]) => !commonAccountFields.some(f => f.key === key))
+    .map(([key, prop]) => ({ key, prop }))
 }
-
-// Generate YAML for an object
-const generateYamlObject = (properties, required = [], indent = 0) => {
-  const indentStr = '  '.repeat(indent)
-  const lines = []
-
-  for (const [key, prop] of Object.entries(properties)) {
-    const value = generateExampleValue(key, prop)
-    const comment = !required?.includes(key) ? '  # Optional' : ''
-
-    if (prop.default !== undefined && !required?.includes(key)) {
-      lines.push(`${indentStr}${key}: ${value}${comment}, defaults to ${prop.default}`)
-    } else {
-      lines.push(`${indentStr}${key}: ${value}${comment}`)
-    }
-  }
-
-  return lines.join('\n')
-}
-
-// Generate example YAML for an account type
-const generateAccountExample = (accountType, index) => {
-  const lines = []
-  const indent = '  '
-
-  // Generate a descriptive name based on the type
-  const typeName = formatConnectorName(accountType.type)
-  const exampleNames = {
-    'trading212': 'My Trading 212',
-    'uk_student_loan': 'Student Loan',
-    'standard_life_pension': 'My Pension'
-  }
-
-  const exampleIntervals = {
-    'trading212': '0 * * * *',
-    'uk_student_loan': '0 2 * * *',
-    'standard_life_pension': '0 3 * * 1'
-  }
-
-  const intervalComments = {
-    'trading212': '  # Every hour',
-    'uk_student_loan': '  # Daily at 2 AM',
-    'standard_life_pension': '  # Weekly on Monday at 3 AM'
-  }
-
-  lines.push(`${indent}- name: "${exampleNames[accountType.type] || typeName}"`)
-  lines.push(`${indent}  type: "${accountType.type}"`)
-  lines.push(`${indent}  interval: "${exampleIntervals[accountType.type] || '0 2 * * *'}"${intervalComments[accountType.type] || ''}`)
-  lines.push(`${indent}  ynabAccountId: "your-ynab-account-id"`)
-
-  // Add connector-specific fields
-  for (const [key, prop] of Object.entries(accountType.schema.properties)) {
-    if (!['name', 'type', 'interval', 'ynabAccountId'].includes(key)) {
-      const value = generateExampleValue(key, prop)
-      lines.push(`${indent}  ${key}: ${value}`)
-    }
-  }
-
-  return lines.join('\n')
-}
-
-// Generate complete example YAML
-const generateExampleYaml = () => {
-  const lines = []
-
-  // Generate top-level sections (ynab, browser, server)
-  for (const section of topLevelSections) {
-    lines.push(`${section.key}:`)
-    const sectionLines = generateYamlObject(section.prop.properties, section.prop.required, 1)
-    lines.push(sectionLines)
-    lines.push('')
-  }
-
-  // Generate accounts array
-  lines.push('accounts:')
-  for (let i = 0; i < accountTypes.length; i++) {
-    lines.push(generateAccountExample(accountTypes[i], i))
-    if (i < accountTypes.length - 1) {
-      lines.push('')
-    }
-  }
-
-  return lines.join('\n')
-}
-
-const exampleYaml = generateExampleYaml()
 </script>
 
 # Configuration Reference
@@ -310,11 +209,11 @@ All account types share these fields:
 </tr>
 </thead>
 <tbody>
-<tr v-for="(prop, key) in accountType.schema.properties" :key="key" v-if="!commonAccountFields.some(f => f.key === key)">
-<td><code>{{ key }}</code></td>
-<td>{{ formatType(prop) }}</td>
-<td>{{ isRequired(accountType.schema.required, key) }}</td>
-<td>{{ prop.description || '' }}</td>
+<tr v-for="field in getAccountSpecificFields(accountType)" :key="field.key">
+<td><code>{{ field.key }}</code></td>
+<td>{{ formatType(field.prop) }}</td>
+<td>{{ isRequired(accountType.schema.required, field.key) }}</td>
+<td>{{ field.prop.description || '' }}</td>
 </tr>
 </tbody>
 </table>
@@ -322,12 +221,6 @@ All account types share these fields:
 <p>See the <a :href="`/connectors/${formatConnectorSlug(accountType.type)}`">{{ formatConnectorName(accountType.type) }}</a> connector documentation for setup instructions.</p>
 
 </div>
-
-## Example Configuration
-
-Here's a complete example showing all configuration options:
-
-<div class="language-yaml"><button title="Copy Code" class="copy"></button><span class="lang">yaml</span><pre class="shiki-themes github-light github-dark vp-code"><code>{{ exampleYaml }}</code></pre></div>
 
 ## Notes
 

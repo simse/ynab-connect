@@ -20,6 +20,7 @@ interface JsonSchemaProperty {
 	minItems?: number;
 	maxItems?: number;
 	additionalProperties?: boolean;
+	description?: string;
 }
 
 interface JsonSchema {
@@ -28,12 +29,13 @@ interface JsonSchema {
 	properties?: Record<string, JsonSchemaProperty>;
 	required?: string[];
 	additionalProperties?: boolean;
+	description?: string;
 }
 
 export default {
 	load() {
 		const schemaPath = path.join(__dirname, ".vitepress/config-schema.json");
 		const schema: JsonSchema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
-		return schema;
+		return { schema };
 	},
 };
