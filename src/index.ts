@@ -46,7 +46,9 @@ for (const account of config.accounts) {
 		`Scheduled job successfully`,
 	);
 
-	await task.execute();
+	if (Bun.env.NODE_ENV !== "production") {
+		await task.execute();
+	}
 }
 
 // schedule summary job
