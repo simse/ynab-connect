@@ -46,7 +46,7 @@ for (const account of config.accounts) {
 		`Scheduled job successfully`,
 	);
 
-	await task.execute();
+	// await task.execute();
 }
 
 // schedule summary job
