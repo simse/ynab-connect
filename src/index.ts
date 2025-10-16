@@ -21,7 +21,8 @@ if (command === "export-schema") {
 logger.info("Welcome to ynab-connect");
 
 // load config only when needed
-const config = (await import("./config.ts")).default;
+const { getConfig } = await import("./config.ts");
+const config = await getConfig();
 
 // check YNAB budget exists
 const budgetExists = await ensureBudgetExists(config.ynab.budgetId);

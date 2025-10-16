@@ -1,10 +1,10 @@
 import { await2FACode } from "../2fa.ts";
+import { getBrowser } from "../browser";
 import type { BrowserAdapter } from "../browser/browserAdapter.ts";
-import { getBrowser } from "../browser/index.ts";
-import type config from "../config.ts";
+import type { Config } from "../config.ts";
 import type { AccountResult, Connector } from "./index.ts";
 
-type AccountType = (typeof config.accounts)[number];
+type AccountType = Config["accounts"][number];
 
 const STANDARD_LIFE_PENSION_AUTH_URL =
 	"https://online.standardlife.com/secure/customer-authentication-client/customer/login";

@@ -1,16 +1,14 @@
-import type config from "../config.ts";
+import type { Config } from "../config.ts";
 import { standardLifePensionConnector } from "./standardLifePension.ts";
 import { getTrading212Balance } from "./trading212.ts";
 import { getUkStudentLoanBalance } from "./ukStudentLoan.ts";
 
-type AccountType = (typeof config.accounts)[number]["type"];
+type AccountType = Config["accounts"][number]["type"];
 
 const connectors: {
 	[type in AccountType]: {
 		friendlyName: string;
-		getBalance: (
-			account: (typeof config.accounts)[number],
-		) => Promise<AccountResult>;
+		getBalance: (account: Config["accounts"][number]) => Promise<AccountResult>;
 	};
 } = {
 	trading212: {
@@ -64,9 +62,7 @@ type AccountResult =
 interface Connector {
 	friendlyName: string;
 
-	getBalance: (
-		account: (typeof config.accounts)[number],
-	) => Promise<AccountResult>;
+	getBalance: (account: Config["accounts"][number]) => Promise<AccountResult>;
 }
 
 export { connectors };

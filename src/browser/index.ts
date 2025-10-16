@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import config from "../config.ts";
+import { getConfig } from "../config.ts";
 import type { BrowserAdapter } from "./browserAdapter.ts";
 import { PuppeteerAdapter } from "./puppeteerAdapter.ts";
 
@@ -15,6 +15,7 @@ export const isBrowserAvailable = async () => {
 };
 
 export const getBrowser = async (): Promise<BrowserAdapter> => {
+	const config = await getConfig();
 	const endpoint = config.browser?.endpoint;
 	const isProduction = Bun.env.NODE_ENV === "production";
 
