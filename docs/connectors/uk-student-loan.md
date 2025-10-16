@@ -1,5 +1,5 @@
 ---
-title: Bruh
+title: UK Student Loan
 ---
 # UK Student Loan
 Sync your UK Student Loan balance from the Student Loans Company website.

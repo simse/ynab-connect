@@ -148,4 +148,104 @@ describe("2FA Module", () => {
 			expect(response.status).toBe(400);
 		});
 	});
+
+	describe("Code Caching", () => {
+		it("should immediately resolve with cached code if received before await", async () => {
+			// Capture a code first
+			const captureResponse = await fetch(
+				`http://localhost:${TEST_PORT}/capture-2fa`,
+				{
+					method: "POST",
+					body: "code: 123456",
+				},
+			);
+			expect(captureResponse.status).toBe(200);
+
+			// Now await it - should resolve immediately
+			const code = await await2FACode("generic-6digit", 5000);
+			expect(code).toBe("123456");
+		});
+
+		it("should wait for new code if cached code is expired", async () => {
+			// Capture a code first
+			await fetch(`http://localhost:${TEST_PORT}/capture-2fa`, {
+				method: "POST",
+				body: "code: 111111",
+			});
+
+			// Wait longer than the reverse timeout (default 10s)
+			await new Promise((resolve) => setTimeout(resolve, 15));
+
+			// Now await it with a very short reverse timeout (1ms) - should wait for new code
+			const codePromise = await2FACode("generic-6digit", 5000, 1);
+
+			// Send a new code
+			await fetch(`http://localhost:${TEST_PORT}/capture-2fa`, {
+				method: "POST",
+				body: "code: 222222",
+			});
+
+			const code = await codePromise;
+			expect(code).toBe("222222");
+		});
+
+		it("should remove code from cache after using it", async () => {
+			// Capture a code
+			await fetch(`http://localhost:${TEST_PORT}/capture-2fa`, {
+				method: "POST",
+				body: "code: 333333",
+			});
+
+			// First await should get the cached code
+			const code1 = await await2FACode("generic-6digit", 5000);
+			expect(code1).toBe("333333");
+
+			// Second await should wait for a new code (not get the cached one)
+			const codePromise = await2FACode("generic-6digit", 5000);
+
+			// Send a new code
+			await fetch(`http://localhost:${TEST_PORT}/capture-2fa`, {
+				method: "POST",
+				body: "code: 444444",
+			});
+
+			const code2 = await codePromise;
+			expect(code2).toBe("444444");
+		});
+
+		it("should respect custom reverse timeout", async () => {
+			// Capture a code
+			await fetch(`http://localhost:${TEST_PORT}/capture-2fa`, {
+				method: "POST",
+				body: "code: 555555",
+			});
+
+			// Wait a short time
+			await new Promise((resolve) => setTimeout(resolve, 50));
+
+			// Await with a custom reverse timeout of 100ms - should still get cached code
+			const code = await await2FACode("generic-6digit", 5000, 100);
+			expect(code).toBe("555555");
+		});
+
+		it("should handle different providers independently in cache", async () => {
+			// Capture codes for different providers
+			await fetch(`http://localhost:${TEST_PORT}/capture-2fa`, {
+				method: "POST",
+				body: "code: 666666",
+			});
+
+			await fetch(`http://localhost:${TEST_PORT}/capture-2fa`, {
+				method: "POST",
+				body: "Your Standard Life verification code is 777777",
+			});
+
+			// Await should get the correct cached code for each provider
+			const genericCode = await await2FACode("generic-6digit", 5000);
+			const standardLifeCode = await await2FACode("standard-life-uk", 5000);
+
+			expect(genericCode).toBe("666666");
+			expect(standardLifeCode).toBe("777777");
+		});
+	});
 });

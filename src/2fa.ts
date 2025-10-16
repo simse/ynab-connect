@@ -13,6 +13,11 @@ interface PendingRequest {
 	timeoutId: Timer;
 }
 
+interface CachedCode {
+	code: string;
+	timestamp: number;
+}
+
 // Registry of 2FA patterns to match against
 const patterns: Pattern[] = [
 	{
@@ -25,8 +30,14 @@ const patterns: Pattern[] = [
 	},
 ];
 
+// Default timeout for reverse caching (10 seconds)
+const DEFAULT_REVERSE_TIMEOUT_MS = 10000;
+
 // Store for pending 2FA code requests
 const pendingRequests = new Map<string, PendingRequest[]>();
+
+// Cache for recently captured 2FA codes
+const cachedCodes = new Map<string, CachedCode>();
 
 let server: ReturnType<typeof Bun.serve> | null = null;
 
@@ -51,6 +62,12 @@ async function handleCapture(req: Request): Promise<Response> {
 		if (match?.[1]) {
 			const code = match[1];
 			logger.info({ provider: pattern.name }, "2FA code captured");
+
+			// Store code in cache with timestamp
+			cachedCodes.set(pattern.name, {
+				code,
+				timestamp: Date.now(),
+			});
 
 			// Resolve all pending requests for this provider
 			const pending = pendingRequests.get(pattern.name);
@@ -115,6 +132,9 @@ export function stop2FAServer(): void {
 	}
 	pendingRequests.clear();
 
+	// Clear cached codes
+	cachedCodes.clear();
+
 	logger.info("2FA server stopped");
 }
 
@@ -122,12 +142,32 @@ export function stop2FAServer(): void {
  * Waits for a 2FA code for the specified provider
  * @param provider The name of the provider (must match a pattern name)
  * @param timeoutMs Timeout in milliseconds (default: 60000)
+ * @param reverseTimeoutMs Maximum age of cached code to use in milliseconds (default: 10000)
  * @returns Promise that resolves with the 2FA code or rejects on timeout
  */
 export function await2FACode(
 	provider: string,
 	timeoutMs = 60000,
+	reverseTimeoutMs = DEFAULT_REVERSE_TIMEOUT_MS,
 ): Promise<string> {
+	// Check if we have a recently cached code
+	const cached = cachedCodes.get(provider);
+	if (cached) {
+		const age = Date.now() - cached.timestamp;
+		if (age <= reverseTimeoutMs) {
+			logger.debug(
+				{ provider, age },
+				"Using cached 2FA code from before await",
+			);
+			// Remove from cache and return immediately
+			cachedCodes.delete(provider);
+			return Promise.resolve(cached.code);
+		}
+		// Code is too old, remove it
+		logger.debug({ provider, age }, "Cached 2FA code expired");
+		cachedCodes.delete(provider);
+	}
+
 	return new Promise((resolve, reject) => {
 		const timeoutId = setTimeout(() => {
 			// Remove this request from pending

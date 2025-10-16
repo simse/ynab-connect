@@ -20,6 +20,12 @@ bun lint:fix
 
 Prefer fixing with Biome over manually fixing linting errors.
 
+Run type checks with
+
+```bash
+bun types
+```
+
 ## Good Practice
 
 When installing new packages use the `-E` flag to pin the version of the package in `bun.lockb`.
@@ -39,3 +45,24 @@ In cases where you need to mock something external, see if you can mock the netw
 Before implementing a new feature, discuss it with the engineer to ensure alignment on the approach and design.
 
 Come up with a plan.
+
+## Coding style
+
+Avoid being too clever. Write code that is easy to read and understand.
+
+E.g. avoid double ternaries, complex one-liners, etc.
+
+Prefer typing out things instead of using advanced TypeScript features that make the code harder to read.
+
+# Writing documentation
+This project uses Vitepress for documentation.
+
+When writing documentation, follow the existing style and structure in the docs folder.
+
+Guides go in the `docs/guide` folder.
+
+Connectors go in the `docs/connectors` folder.
+
+Write in a concise and clear manner. Do not use emojis. Do not over explain, but when needed create a guide to explain a concept.
+
+When adding a new guide or connector, update the sidebar in `docs/.vitepress/config.ts` to include the new documentation.

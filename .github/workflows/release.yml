@@ -60,7 +60,7 @@ jobs:
       - lint
       - test
     runs-on: ubuntu-22.04
-    name: Release
+    name: release-container
     permissions:
       packages: write
       contents: read

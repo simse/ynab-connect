@@ -38,17 +38,26 @@ class StandardLifePensionConnector implements Connector {
 		await page.type("#password", account.password);
 		await page.click("#submit");
 
-		// wait for 2FA code
-		const twoFactorCode = await await2FACode("standard-life-uk", 15000).catch(
-			() => null,
-		);
+		// check if we need to input a 2FA code
+		await page.waitForNetworkIdle();
+		const pageUrl = page.url();
 
-		// if we didn't get a 2FA code, check if we are already logged in
-		if (!twoFactorCode) {
-			await page.waitForNetworkIdle();
-			const pageUrl = page.url();
+		if (pageUrl !== STANDARD_LIFE_DASHBOARD_URL) {
+			// wait for 2FA code
+			const twoFactorCode = await await2FACode(
+				"standard-life-uk",
+				15000,
+				10000,
+			).catch(() => null);
 
-			if (pageUrl !== STANDARD_LIFE_DASHBOARD_URL) {
+			if (twoFactorCode) {
+				await page.type("#OTPcode", twoFactorCode);
+				await page.click("#trustDevice");
+				await page.click("#verifyCode");
+
+				// wait for navigation to dashboard
+				await page.waitForNetworkIdle();
+			} else {
 				await page.close();
 
 				return {
@@ -56,16 +65,6 @@ class StandardLifePensionConnector implements Connector {
 					canRetry: true,
 				};
 			}
-		}
-
-		// enter 2FA code if we have one
-		if (twoFactorCode) {
-			await page.type("#OTPcode", twoFactorCode);
-			await page.click("#trustDevice");
-			await page.click("#verifyCode");
-
-			// wait for navigation to dashboard
-			await page.waitForNetworkIdle();
 		}
 
 		// go to policy page
