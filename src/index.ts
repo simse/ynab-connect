@@ -1,11 +1,27 @@
 import cron, { type ScheduledTask } from "node-cron";
+import { z } from "zod";
 import { start2FAServer, stop2FAServer } from "./2fa.ts";
-import config from "./config.ts";
 import logger, { createLogger } from "./logger.ts";
 import { runSyncJob } from "./runtime.ts";
 import { ensureBudgetExists } from "./ynab.ts";
 
+// parse command line arguments
+const args = Bun.argv.slice(2);
+const command = args[0];
+const connectorName = args[1];
+
+// handle "export-schema" command before loading config
+if (command === "export-schema") {
+	const { schemaConfig } = await import("./config.ts");
+	const jsonSchema = z.toJSONSchema(schemaConfig);
+	console.log(JSON.stringify(jsonSchema, null, 2));
+	process.exit(0);
+}
+
 logger.info("Welcome to ynab-connect");
+
+// load config only when needed
+const config = (await import("./config.ts")).default;
 
 // check YNAB budget exists
 const budgetExists = await ensureBudgetExists(config.ynab.budgetId);
@@ -19,8 +35,30 @@ if (!budgetExists) {
 
 logger.info(`Using YNAB budget ID: ${config.ynab.budgetId}`);
 
+// handle "run <connector_name>" command
+if (command === "run") {
+	if (!connectorName) {
+		logger.error("Please provide a connector name: run <connector_name>");
+		process.exit(1);
+	}
+
+	const account = config.accounts.find((acc) => acc.name === connectorName);
+
+	if (!account) {
+		logger.error(
+			`Connector "${connectorName}" not found. Available connectors: ${config.accounts.map((acc) => acc.name).join(", ")}`,
+		);
+		process.exit(1);
+	}
+
+	logger.info(`Running connector "${connectorName}"`);
+	await runSyncJob(account);
+	logger.info(`Connector "${connectorName}" completed`);
+	process.exit(0);
+}
+
 // start 2FA server
-start2FAServer(config.server.port);
+start2FAServer(config.server?.port || 4030);
 
 // schedule jobs for each account
 const jobs: Map<string, ScheduledTask> = new Map();

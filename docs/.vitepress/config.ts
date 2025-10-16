@@ -59,6 +59,7 @@ export default defineConfig({
 				items: [
 					{ text: "Quick Start", link: "/quick-start" },
 					{ text: "Configuration", link: "/configuration" },
+					{ text: "Configuration Reference", link: "/config-reference" },
 				],
 			},
 			{
