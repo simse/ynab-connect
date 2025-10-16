@@ -184,6 +184,7 @@ ynab_connect
 # docs
 docs/.vitepress/dist
 docs/.vitepress/cache
+docs/.vitepress/config-schema.json
 
 # Claude Code
 .claude

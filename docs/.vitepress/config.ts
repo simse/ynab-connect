@@ -56,18 +56,20 @@ export default defineConfig({
 		sidebar: [
 			{
 				text: "Get Started",
+				items: [{ text: "Quick Start", link: "/quick-start" }],
+			},
+			{
+				text: "Configuration",
 				items: [
-					{ text: "Quick Start", link: "/quick-start" },
-					{ text: "Configuration", link: "/configuration" },
+					{ text: "Overview", link: "/configuration" },
+					{ text: "Configuration Reference", link: "/config-reference" },
+					{ text: "Browser Setup", link: "/browser" },
+					{ text: "SMS Forwarding for 2FA", link: "/guide/sms-forwarding" },
 				],
 			},
 			{
 				text: "Guides",
-				items: generateSidebarItems("guide", "guide"),
-			},
-			{
-				text: "Features",
-				items: [{ text: "Browser", link: "/browser" }],
+				items: [{ text: "Create YNAB Token", link: "/guide/create-ynab-token" }],
 			},
 			{
 				text: "Connectors",
