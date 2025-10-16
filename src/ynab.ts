@@ -54,7 +54,7 @@ const adjustBalance = async (
 	}
 
 	if (balanceDelta === 0) {
-		log.info(
+		log.debug(
 			{ accountId, amount, date: dateToYnabFormat(balanceDate) },
 			`No adjustment needed.`,
 		);
@@ -74,7 +74,7 @@ const adjustBalance = async (
 	);
 
 	if (existingTransaction) {
-		log.info(
+		log.debug(
 			{
 				accountId,
 				transactionId: existingTransaction.id,

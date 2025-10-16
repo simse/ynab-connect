@@ -1,5 +1,6 @@
 import { await2FACode } from "../2fa.ts";
-import { getBrowser } from "../browser.ts";
+import type { BrowserAdapter } from "../browser/browserAdapter.ts";
+import { getBrowser } from "../browser/index.ts";
 import type config from "../config.ts";
 import type { AccountResult, Connector } from "./index.ts";
 
@@ -18,8 +19,12 @@ const parseBalanceString = (input: string): number => {
 	return parseFloat(m[1]?.replace(/,/g, "") || "0");
 };
 
-class StandardLifePensionConnector implements Connector {
+export class StandardLifePensionConnector implements Connector {
 	friendlyName = "Standard Life Pension";
+
+	constructor(
+		private browserFactory: () => Promise<BrowserAdapter> = getBrowser,
+	) {}
 
 	async getBalance(account: AccountType): Promise<AccountResult> {
 		if (account.type !== "standard_life_pension") {
@@ -29,7 +34,7 @@ class StandardLifePensionConnector implements Connector {
 		}
 
 		// get a browser instance
-		const browser = await getBrowser();
+		const browser = await this.browserFactory();
 
 		// sign in
 		const page = await browser.newPage();

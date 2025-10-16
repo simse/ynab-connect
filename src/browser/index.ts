@@ -1,5 +1,7 @@
 import puppeteer from "puppeteer";
-import config from "./config.ts";
+import config from "../config.ts";
+import type { BrowserAdapter } from "./browserAdapter.ts";
+import { PuppeteerAdapter } from "./puppeteerAdapter.ts";
 
 export const isBrowserAvailable = async () => {
 	try {
@@ -12,15 +14,16 @@ export const isBrowserAvailable = async () => {
 	}
 };
 
-export const getBrowser = async () => {
+export const getBrowser = async (): Promise<BrowserAdapter> => {
 	const endpoint = config.browser?.endpoint;
 	const isProduction = Bun.env.NODE_ENV === "production";
 
 	// In non-production environments without an endpoint, launch a headful browser
 	if (!isProduction && !endpoint) {
-		return puppeteer.launch({
+		const browser = await puppeteer.launch({
 			headless: false,
 		});
+		return new PuppeteerAdapter(browser);
 	}
 
 	// In production or when an endpoint is configured, connect to the endpoint
@@ -28,7 +31,8 @@ export const getBrowser = async () => {
 		throw new Error("Browser endpoint is not configured");
 	}
 
-	return puppeteer.connect({
+	const browser = await puppeteer.connect({
 		browserWSEndpoint: endpoint,
 	});
+	return new PuppeteerAdapter(browser);
 };

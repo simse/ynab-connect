@@ -18,14 +18,23 @@ const getBalanceWithRetry = async (
 
 	return new Promise((resolve) => {
 		operation.attempt(async (currentAttempt) => {
-			const result = await connector.getBalance(account);
+			let result: AccountResult;
+
+			try {
+				result = await connector.getBalance(account);
+			} catch (e) {
+				result = {
+					canRetry: true,
+					error: (e as Error).message,
+				};
+			}
 
 			if ("balance" in result) {
 				return resolve(result);
 			}
 
 			if (!result.canRetry) {
-				logger.info(
+				logger.error(
 					{
 						account: account.name,
 						type: account.type,
@@ -78,7 +87,7 @@ const runSyncJob = async (account: Account) => {
 		return;
 	}
 
-	logger.info(
+	logger.debug(
 		{
 			type: account.type,
 			balance: result.balance,
@@ -111,6 +120,8 @@ const runSyncJob = async (account: Account) => {
 		{
 			type: account.type,
 			balance: result.balance,
+			accountId: account.ynabAccountId,
+			accountName: account.name,
 		},
 		`Adjusted balance in YNAB successfully`,
 	);

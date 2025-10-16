@@ -1,4 +1,5 @@
-import { getBrowser, isBrowserAvailable } from "../browser.ts";
+import { getBrowser, isBrowserAvailable } from "../browser";
+import type { BrowserAdapter } from "../browser/browserAdapter.ts";
 import type { AccountResult } from "./index.ts";
 
 const parseBalanceString = (input: string): number => {
@@ -11,6 +12,7 @@ const getUkStudentLoanBalance = async (
 	slcEmail: string,
 	slcPassword: string,
 	slcSecretAnswer: string,
+	browserFactory: () => Promise<BrowserAdapter> = getBrowser,
 ): Promise<AccountResult> => {
 	const browserAvailable = await isBrowserAvailable();
 	if (!browserAvailable) {
@@ -21,7 +23,7 @@ const getUkStudentLoanBalance = async (
 		};
 	}
 
-	const browser = await getBrowser();
+	const browser = await browserFactory();
 
 	const page = await browser.newPage();
 
