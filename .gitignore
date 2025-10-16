@@ -184,3 +184,6 @@ ynab_connect
 # docs
 docs/.vitepress/dist
 docs/.vitepress/cache
+
+# Claude Code
+.claude

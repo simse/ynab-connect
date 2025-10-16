@@ -1,4 +1,5 @@
 import type config from "../config.ts";
+import { standardLifePensionConnector } from "./standardLifePension.ts";
 import { getTrading212Balance } from "./trading212.ts";
 import { getUkStudentLoanBalance } from "./ukStudentLoan.ts";
 
@@ -39,6 +40,7 @@ const connectors: {
 			);
 		},
 	},
+	standard_life_pension: standardLifePensionConnector,
 };
 
 type AccountTransaction = {
@@ -59,6 +61,14 @@ type AccountResult =
 			canRetry: boolean;
 	  };
 
+interface Connector {
+	friendlyName: string;
+
+	getBalance: (
+		account: (typeof config.accounts)[number],
+	) => Promise<AccountResult>;
+}
+
 export { connectors };
 
-export type { AccountResult, AccountTransaction };
+export type { AccountResult, AccountTransaction, Connector };

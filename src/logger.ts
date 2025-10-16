@@ -1,11 +1,17 @@
 import pino from "pino";
 
+const getLogLevel = () => {
+	if (Bun.env.NODE_ENV === "test") return "silent";
+	if (Bun.env.NODE_ENV === "production") return "info";
+	return "debug";
+};
+
 const createLogger = (name?: string) =>
 	pino({
 		name,
-		level: Bun.env.NODE_ENV === "production" ? "info" : "debug",
+		level: getLogLevel(),
 		transport:
-			Bun.env.NODE_ENV === "production"
+			Bun.env.NODE_ENV === "production" || Bun.env.NODE_ENV === "test"
 				? undefined
 				: {
 						target: "pino-pretty",

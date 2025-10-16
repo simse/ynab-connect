@@ -30,6 +30,13 @@ const accountConfig = z.discriminatedUnion("type", [
 			.string()
 			.min(1, "UK Student Loan secret answer is required"),
 	}),
+	z.object({
+		...commonFields,
+		type: z.literal("standard_life_pension"),
+		username: z.string().min(1, "Standard Life username is required"),
+		password: z.string().min(1, "Standard Life password is required"),
+		policyNumber: z.string().min(1, "Standard Life policy number is required"),
+	}),
 ]);
 
 export type Account = z.infer<typeof accountConfig>;
@@ -44,6 +51,11 @@ const schemaConfig = z.object({
 			endpoint: z.string(),
 		})
 		.optional(),
+	server: z
+		.object({
+			port: z.number().int().positive().default(4030),
+		})
+		.default({ port: 4030 }),
 	accounts: accountConfig
 		.array()
 		.min(1, "At least one account must be configured"),

@@ -5,6 +5,7 @@
 	"scripts": {
 		"lint": "biome check",
 		"lint:fix": "biome check --write",
+        "types": "tsc --noEmit",
 		"build:binary": "bun build src/index.ts --compile --minify --sourcemaps --outfile ynab-connect",
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
@@ -25,7 +26,7 @@
 	"dependencies": {
 		"node-cron": "4.2.1",
 		"pino": "10.0.0",
-		"puppeteer-core": "24.24.0",
+		"puppeteer": "24.25.0",
 		"retry": "0.13.1",
 		"yaml": "2.8.1",
 		"ynab": "2.10.0",
