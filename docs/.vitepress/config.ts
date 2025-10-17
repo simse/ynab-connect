@@ -69,7 +69,9 @@ export default defineConfig({
 			},
 			{
 				text: "Guides",
-				items: [{ text: "Create YNAB Token", link: "/guide/create-ynab-token" }],
+				items: [
+					{ text: "Create YNAB Token", link: "/guide/create-ynab-token" },
+				],
 			},
 			{
 				text: "Connectors",

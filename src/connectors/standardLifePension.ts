@@ -1,9 +1,10 @@
 import { await2FACode } from "../2fa.ts";
-import { getBrowser } from "../browser.ts";
-import type config from "../config.ts";
+import { getBrowser } from "../browser";
+import type { BrowserAdapter } from "../browser/browserAdapter.ts";
+import type { Config } from "../config.ts";
 import type { AccountResult, Connector } from "./index.ts";
 
-type AccountType = (typeof config.accounts)[number];
+type AccountType = Config["accounts"][number];
 
 const STANDARD_LIFE_PENSION_AUTH_URL =
 	"https://online.standardlife.com/secure/customer-authentication-client/customer/login";
@@ -18,8 +19,12 @@ const parseBalanceString = (input: string): number => {
 	return parseFloat(m[1]?.replace(/,/g, "") || "0");
 };
 
-class StandardLifePensionConnector implements Connector {
+export class StandardLifePensionConnector implements Connector {
 	friendlyName = "Standard Life Pension";
+
+	constructor(
+		private browserFactory: () => Promise<BrowserAdapter> = getBrowser,
+	) {}
 
 	async getBalance(account: AccountType): Promise<AccountResult> {
 		if (account.type !== "standard_life_pension") {
@@ -29,7 +34,7 @@ class StandardLifePensionConnector implements Connector {
 		}
 
 		// get a browser instance
-		const browser = await getBrowser();
+		const browser = await this.browserFactory();
 
 		// sign in
 		const page = await browser.newPage();

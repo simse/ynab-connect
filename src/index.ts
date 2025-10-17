@@ -21,7 +21,8 @@ if (command === "export-schema") {
 logger.info("Welcome to ynab-connect");
 
 // load config only when needed
-const config = (await import("./config.ts")).default;
+const { getConfig } = await import("./config.ts");
+const config = await getConfig();
 
 // check YNAB budget exists
 const budgetExists = await ensureBudgetExists(config.ynab.budgetId);
@@ -58,7 +59,9 @@ if (command === "run") {
 }
 
 // start 2FA server
-start2FAServer(config.server?.port || 4030);
+if (config.server) {
+	start2FAServer(config.server.port);
+}
 
 // schedule jobs for each account
 const jobs: Map<string, ScheduledTask> = new Map();
@@ -83,10 +86,6 @@ for (const account of config.accounts) {
 		},
 		`Scheduled job successfully`,
 	);
-
-	if (Bun.env.NODE_ENV !== "production") {
-		await task.execute();
-	}
 }
 
 // schedule summary job

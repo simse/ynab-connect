@@ -115,22 +115,35 @@ const schemaConfig = z
 
 export { schemaConfig };
 
+export type Config = z.infer<typeof schemaConfig>;
+
 const configPath =
 	Bun.env.NODE_ENV === "production"
 		? "/config.yaml"
 		: path.join(__dirname, "../config.yaml");
 
-// TODO: ensure this only loads once
-const config = await loadConfig({
-	schema: schemaConfig,
-	adapters: yamlAdapter({
-		path: configPath,
-	}),
-	onError: (e) => {
-		console.error(`error while loading config: ${fromError(e).message}`);
-		process.exit(1);
-	},
-	logger,
-});
+let cachedConfig: Config | null = null;
 
-export default config;
+/**
+ * Get the configuration, loading it if not already loaded.
+ * The config is cached after the first load.
+ */
+export const getConfig = async (): Promise<Config> => {
+	if (cachedConfig) {
+		return cachedConfig;
+	}
+
+	cachedConfig = await loadConfig({
+		schema: schemaConfig,
+		adapters: yamlAdapter({
+			path: configPath,
+		}),
+		onError: (e) => {
+			console.error(`error while loading config: ${fromError(e).message}`);
+			process.exit(1);
+		},
+		logger,
+	});
+
+	return cachedConfig;
+};
