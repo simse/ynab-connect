@@ -3,17 +3,6 @@ import { getConfig } from "../config.ts";
 import type { BrowserAdapter } from "./browserAdapter.ts";
 import { PuppeteerAdapter } from "./puppeteerAdapter.ts";
 
-export const isBrowserAvailable = async () => {
-	try {
-		const browser = await getBrowser();
-		await browser.close();
-
-		return true;
-	} catch {
-		return false;
-	}
-};
-
 export const getBrowser = async (): Promise<BrowserAdapter> => {
 	const config = await getConfig();
 	const endpoint = config.browser?.endpoint;
