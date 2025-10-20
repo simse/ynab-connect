@@ -20,6 +20,7 @@
 		"msw": "2.11.5",
 		"pino-pretty": "13.1.2",
 		"vitepress": "^2.0.0-alpha.12",
+		"vitepress-sidebar": "1.33.0",
 		"wrangler": "4.43.0"
 	},
 	"peerDependencies": {

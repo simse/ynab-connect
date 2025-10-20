@@ -5,6 +5,9 @@ title: IG Trading
 
 This connector uses the IG Trading API to sync the balance of your IG trading account.
 
+> [!WARNING]
+> This connector does not support ISA or SIPP accounts. It only supports CFD and Spread Betting accounts.
+
 ## Obtaining API credentials
 
 To use this connector, you need to obtain API credentials from IG:
