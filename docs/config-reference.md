@@ -218,7 +218,7 @@ All account types share these fields:
 </tbody>
 </table>
 
-<p>See the <a :href="`/connectors/${formatConnectorSlug(accountType.type)}`">{{ formatConnectorName(accountType.type) }}</a> connector documentation for setup instructions.</p>
+<p>See the <a :href="`/connector/${formatConnectorSlug(accountType.type)}`">{{ formatConnectorName(accountType.type) }}</a> connector documentation for setup instructions.</p>
 
 </div>
 

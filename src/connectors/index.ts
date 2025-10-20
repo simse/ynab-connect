@@ -1,4 +1,5 @@
 import type { Config } from "../config.ts";
+import { igTradingConnector } from "./igTrading.ts";
 import { standardLifePensionConnector } from "./standardLifePension.ts";
 import { getTrading212Balance } from "./trading212.ts";
 import { getUkStudentLoanBalance } from "./ukStudentLoan.ts";
@@ -39,6 +40,7 @@ const connectors: {
 		},
 	},
 	standard_life_pension: standardLifePensionConnector,
+	ig_trading: igTradingConnector,
 };
 
 type AccountTransaction = {

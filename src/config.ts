@@ -67,6 +67,26 @@ const accountConfig = z.discriminatedUnion("type", [
 			.min(1, "Standard Life policy number is required")
 			.describe("Policy number for the pension account"),
 	}),
+	z.object({
+		...commonFields,
+		type: z.literal("ig_trading").describe("Connector type"),
+		igUsername: z
+			.string()
+			.min(1, "IG username is required")
+			.describe("Username for IG login"),
+		igPassword: z
+			.string()
+			.min(1, "IG password is required")
+			.describe("Password for IG login"),
+		igApiKey: z
+			.string()
+			.min(1, "IG API key is required")
+			.describe("Your IG API key"),
+		igAccountId: z
+			.string()
+			.min(1, "IG account ID is required")
+			.describe("The ID of the IG account to query"),
+	}),
 ]);
 
 export type Account = z.infer<typeof accountConfig>;
