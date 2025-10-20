@@ -1,9 +1,9 @@
 import cron, { type ScheduledTask } from "node-cron";
 import { z } from "zod";
 import { start2FAServer, stop2FAServer } from "./2fa.ts";
-import logger, { createLogger } from "./logger.ts";
+import logger from "./logger.ts";
 import { runSyncJob } from "./runtime.ts";
-import { ensureBudgetExists } from "./ynab.ts";
+import { doesBudgetExist } from "./ynab.ts";
 
 // parse command line arguments
 const args = Bun.argv.slice(2);
@@ -25,7 +25,7 @@ const { getConfig } = await import("./config.ts");
 const config = await getConfig();
 
 // check YNAB budget exists
-const budgetExists = await ensureBudgetExists(config.ynab.budgetId);
+const budgetExists = await doesBudgetExist(config.ynab.budgetId);
 
 if (!budgetExists) {
 	logger.error(
@@ -84,26 +84,9 @@ for (const account of config.accounts) {
 			schedule: account.interval,
 			next_run: task.getNextRun()?.toISOString(),
 		},
-		`Scheduled job successfully`,
+		"scheduled job successfully",
 	);
 }
-
-// schedule summary job
-const summaryJob = cron.schedule("0 * * * *", () => {
-	const log = createLogger("Summary");
-
-	for (const [name, job] of jobs) {
-		log.info(
-			{
-				account: name,
-				next_run: job.getNextRun()?.toISOString(),
-			},
-			`Next run scheduled`,
-		);
-	}
-});
-
-await summaryJob.execute();
 
 // handle graceful shutdown
 const shutdown = () => {

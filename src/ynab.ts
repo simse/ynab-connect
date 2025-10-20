@@ -16,7 +16,7 @@ const getYnabAPI = async () => {
 	return ynabAPI;
 };
 
-const ensureBudgetExists = async (budgetId: string) => {
+const doesBudgetExist = async (budgetId: string) => {
 	const api = await getYnabAPI();
 	try {
 		await api.budgets.getBudgetById(budgetId);
@@ -44,6 +44,65 @@ const dateToYnabFormat = (date: Date) => {
 	return date.toISOString().split("T")[0];
 };
 
+const calculateBalanceDelta = async (
+	accountId: string,
+	targetAmountInMilliunits: number,
+) => {
+	const currentBalance = await getAccountBalance(accountId);
+	return targetAmountInMilliunits - currentBalance;
+};
+
+const findExistingAdjustmentTransaction = async (
+	budgetId: string,
+	accountId: string,
+	date: Date,
+) => {
+	const api = await getYnabAPI();
+	const transactionsResponse = await api.transactions.getTransactionsByAccount(
+		budgetId,
+		accountId,
+		dateToYnabFormat(date),
+	);
+
+	return transactionsResponse.data.transactions.find(
+		(t) => t.memo === YNAB_MEMO && t.date === dateToYnabFormat(date),
+	);
+};
+
+const updateAdjustmentTransaction = async (
+	budgetId: string,
+	transactionId: string,
+	newAmount: number,
+	existingAmount: number,
+) => {
+	const api = await getYnabAPI();
+	await api.transactions.updateTransaction(budgetId, transactionId, {
+		transaction: {
+			amount: newAmount + existingAmount,
+		},
+	});
+};
+
+const createAdjustmentTransaction = async (
+	budgetId: string,
+	accountId: string,
+	amount: number,
+	date: Date,
+) => {
+	const api = await getYnabAPI();
+	await api.transactions.createTransaction(budgetId, {
+		transaction: {
+			account_id: accountId,
+			cleared: "reconciled",
+			approved: true,
+			date: dateToYnabFormat(date),
+			amount: amount,
+			payee_name: YNAB_PAYEE,
+			memo: YNAB_MEMO,
+		},
+	});
+};
+
 const adjustBalance = async (
 	accountId: string,
 	amount: number,
@@ -51,39 +110,33 @@ const adjustBalance = async (
 	log = logger,
 ) => {
 	const config = await getConfig();
-	const api = await getYnabAPI();
 	const budgetId = config.ynab.budgetId;
 	const balanceDate = date ?? new Date();
 
+	const targetAmountInMilliunits = amount * 1000;
+
 	let balanceDelta = 0;
-
-	const newBalance = amount * 1000; // convert to milliunits
-
 	try {
-		const currentBalance = await getAccountBalance(accountId);
-
-		balanceDelta = newBalance - currentBalance;
+		balanceDelta = await calculateBalanceDelta(
+			accountId,
+			targetAmountInMilliunits,
+		);
 	} catch (_e) {
-		throw new Error(`Error fetching account balance for account ${accountId}`);
+		throw new Error("error fetching account balance");
 	}
 
 	if (balanceDelta === 0) {
 		log.debug(
 			{ accountId, amount, date: dateToYnabFormat(balanceDate) },
-			`No adjustment needed.`,
+			`no balance adjustment needed`,
 		);
 		return;
 	}
 
-	// check if there's already a transaction with the same memo and date
-	const transactionsResponse = await api.transactions.getTransactionsByAccount(
+	const existingTransaction = await findExistingAdjustmentTransaction(
 		budgetId,
 		accountId,
-		dateToYnabFormat(balanceDate),
-	);
-
-	const existingTransaction = transactionsResponse.data.transactions.find(
-		(t) => t.memo === YNAB_MEMO && t.date === dateToYnabFormat(balanceDate),
+		balanceDate,
 	);
 
 	if (existingTransaction) {
@@ -97,26 +150,22 @@ const adjustBalance = async (
 			`An adjustment transaction already exists, updating that transaction instead of creating a new one.`,
 		);
 
-		await api.transactions.updateTransaction(budgetId, existingTransaction.id, {
-			transaction: {
-				amount: balanceDelta + existingTransaction.amount,
-			},
-		});
+		await updateAdjustmentTransaction(
+			budgetId,
+			existingTransaction.id,
+			balanceDelta,
+			existingTransaction.amount,
+		);
 
 		return;
 	}
 
-	await api.transactions.createTransaction(budgetId, {
-		transaction: {
-			account_id: accountId,
-			cleared: "reconciled",
-			approved: true,
-			date: balanceDate.toISOString().split("T")[0],
-			amount: balanceDelta,
-			payee_name: YNAB_PAYEE,
-			memo: YNAB_MEMO,
-		},
-	});
+	await createAdjustmentTransaction(
+		budgetId,
+		accountId,
+		balanceDelta,
+		balanceDate,
+	);
 };
 
-export { ensureBudgetExists, adjustBalance };
+export { doesBudgetExist, adjustBalance };

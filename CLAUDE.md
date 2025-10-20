@@ -40,6 +40,14 @@ Avoid mocking dependencies, except in cases where the dependency is external (e.
 
 In cases where you need to mock something external, see if you can mock the network request or database call directly instead of mocking the entire dependency.
 
+Check coverage with:
+
+```bash
+bun test --coverage
+```
+
+And ensure coverage does not decrease, and new code should have 100% coverage.
+
 ## Working with the engineer
 
 Before implementing a new feature, discuss it with the engineer to ensure alignment on the approach and design.
