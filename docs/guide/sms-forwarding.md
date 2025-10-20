@@ -22,4 +22,4 @@ To be added.
 
 The following connectors require SMS forwarding for two-factor authentication:
 
-- [Standard Life Pension](/connectors/standard-life-pension)
+- [Standard Life Pension](/connector/standard-life-pension)
